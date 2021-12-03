@@ -4,16 +4,9 @@ import java.math.BigDecimal;
 
 public class WalletRefill {
 	
-	String walletId;
 	String cardNumber;
 	BigDecimal value;
 	
-	public String getWalletId() {
-		return walletId;
-	}
-	public void setWalletId(String walletId) {
-		this.walletId = walletId;
-	}
 	public String getCardNumber() {
 		return cardNumber;
 	}

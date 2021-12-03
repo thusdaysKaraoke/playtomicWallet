@@ -5,11 +5,13 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -26,13 +28,14 @@ public class WalletController {
 
 	@Autowired
 	WalletService walletService;
-
+	
 	@Autowired
+    @Qualifier("autoStripeService")
 	StripeService stripeService;
 
 	@GetMapping("")
 	ResponseEntity<List<String>> getWalletsId(@RequestParam(name = "index", defaultValue = "0") Integer index,
-			@RequestParam(name = "size", defaultValue = "10") Integer size, @RequestParam(name = "sort") String sort) {
+			@RequestParam(name = "size", defaultValue = "10") Integer size, @RequestParam(name = "sort", defaultValue = "id") String sort) {
 		log.info(String.format("HTTP Request: retrieving wallets for parameters { index: %d, size: %d, sort: %s}",
 				index, size, sort));
 
@@ -84,10 +87,11 @@ public class WalletController {
 	}
 
 	@PostMapping("/{id}/charge")
-	ResponseEntity<Wallet> chargeWallet(WalletRefill refill) {
-		log.info("HTTP Request: refilling wallet " + refill.getWalletId());
+	ResponseEntity<Wallet> chargeWallet(@PathVariable("id") String id, @RequestBody WalletRefill refill) {
+		log.info("HTTP Request: refilling wallet " + id);
 
 		try {
+
 			stripeService.charge(refill.getCardNumber(), refill.getValue());
 		} catch (Exception e) {
 			log.error(String.format("Stripe service error: %s", e.getMessage()));
@@ -95,7 +99,7 @@ public class WalletController {
 		}
 
 		try {
-			Wallet wallet = walletService.refillWallet(refill.getWalletId(), refill.getValue());
+			Wallet wallet = walletService.refillWallet(id, refill.getValue());
 
 			if (wallet == null) {
 				return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
